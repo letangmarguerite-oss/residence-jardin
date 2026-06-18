@@ -1,0 +1,180 @@
+from flask import Flask, render_template, request, redirect, url_for, flash
+from database import get_connection, init_db
+import calendar
+from datetime import date, datetime
+
+app = Flask(__name__)
+app.secret_key = "change_this_secret_key"
+
+# Initialize database at startup
+init_db()
+
+@app.template_filter('fr_date')
+def fr_date(value):
+    try:
+        d = datetime.strptime(value, "%Y-%m-%d")
+        return d.strftime("%d/%m/%Y")
+    except:
+        return value
+
+
+# ---------------------------
+# CALENDAR VIEW WITH NAVIGATION
+# ---------------------------
+@app.route("/calendar")
+def calendar_view():
+    # Dictionnaire des mois en français
+    MOIS_FR = {
+        1: "Janvier",
+        2: "Février",
+        3: "Mars",
+        4: "Avril",
+        5: "Mai",
+        6: "Juin",
+        7: "Juillet",
+        8: "Août",
+        9: "Septembre",
+        10: "Octobre",
+        11: "Novembre",
+        12: "Décembre"
+    }
+
+    # Read month/year from URL, or default to current month
+    today = date.today()
+    year = int(request.args.get("year", today.year))
+    month = int(request.args.get("month", today.month))
+
+    # Generate calendar matrix
+    cal = calendar.monthcalendar(year, month)
+
+    # Load all slots
+    conn = get_connection()
+    c = conn.cursor()
+    c.execute("SELECT resident, day, time_slot FROM planning")
+    slots = c.fetchall()
+    conn.close()
+
+    # Organize bookings by day number
+    bookings = {}
+    for resident, day, time_slot in slots:
+        y, m, d = map(int, day.split("-"))
+        if y == year and m == month:
+            if d not in bookings:
+                bookings[d] = []
+            bookings[d].append(f"{time_slot} — {resident}")
+
+    # Compute previous and next month
+    prev_month = month - 1
+    prev_year = year
+    next_month = month + 1
+    next_year = year
+
+    if prev_month == 0:
+        prev_month = 12
+        prev_year -= 1
+
+    if next_month == 13:
+        next_month = 1
+        next_year += 1
+
+    # 👉 Le return doit être ici, PAS dans un if
+    return render_template(
+        "calendar.html",
+        cal=cal,
+        month=month,
+        year=year,
+        month_name=MOIS_FR[month],
+        bookings=bookings,
+        prev_month=prev_month,
+        prev_year=prev_year,
+        next_month=next_month,
+        next_year=next_year
+    )
+
+
+# ---------------------------
+# DATABASE HELPERS
+# ---------------------------
+def get_all_slots():
+    conn = get_connection()
+    c = conn.cursor()
+    c.execute("SELECT id, resident, day, time_slot FROM planning ORDER BY day, time_slot")
+    rows = c.fetchall()
+    conn.close()
+    return rows
+
+
+def add_slot(resident, day, time_slot):
+    conn = get_connection()
+    c = conn.cursor()
+    c.execute(
+        "INSERT INTO planning (resident, day, time_slot) VALUES (?, ?, ?)",
+        (resident, day, time_slot),
+    )
+    conn.commit()
+    conn.close()
+
+
+def delete_slot(slot_id):
+    conn = get_connection()
+    c = conn.cursor()
+    c.execute("DELETE FROM planning WHERE id = ?", (slot_id,))
+    conn.commit()
+    conn.close()
+
+
+
+
+# ---------------------------
+# TIME SLOT GENERATOR (ADD THIS HERE)
+# ---------------------------
+def generate_time_slots():
+    slots = []
+    for hour in range(7, 23):  # 08:00 to 18:30
+        slots.append(f"{hour:02d}:00")
+        slots.append(f"{hour:02d}:30")
+    return slots
+
+# ---------------------------
+# ROUTES
+# ---------------------------
+@app.route("/")
+def index():
+    slots = get_all_slots()
+    return render_template("index.html", slots=slots)
+
+
+@app.route("/add", methods=["GET", "POST"])
+def add():
+    preselected_day = request.args.get("preselected_day")
+
+    if request.method == "POST":
+        resident = request.form.get("resident", "").strip()
+        day = request.form.get("day", "").strip()
+        time_slot = request.form.get("time_slot", "").strip()
+
+        if not resident or not day or not time_slot:
+            flash("Veuillez remplir tous les champs.")
+            return redirect(url_for("add"))
+
+        add_slot(resident, day, time_slot)
+        flash("Créneau ajouté avec succès.")
+        return redirect(url_for("index"))
+
+    return render_template(
+        "add_slot.html",
+        preselected_day=preselected_day,
+        time_slots=generate_time_slots()
+    )
+
+@app.route("/delete/<int:slot_id>", methods=["POST"])
+def delete(slot_id):
+    delete_slot(slot_id)
+    flash("Time slot deleted.")
+    return redirect(url_for("index"))
+
+# ---------------------------
+# RUN APP
+# ---------------------------
+if __name__ == "__main__":
+    app.run(debug=True)

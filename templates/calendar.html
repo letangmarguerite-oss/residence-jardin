@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<!-- Navigation bar ABOVE the calendar -->
+<div class="calendar-nav">
+    <a class="nav-btn" href="{{ url_for('calendar_view', month=prev_month, year=prev_year) }}">← Mois précédent</a>
+
+    <span class="month-title">{{ month_name }} {{ year }}</span>
+
+
+    <a class="nav-btn" href="{{ url_for('calendar_view', month=next_month, year=next_year) }}">Mois suivant →</a>
+</div>
+
+
+<!-- Calendar grid -->
+<table class="calendar">
+    <thead>
+        <tr>
+            <th>Lun</th>
+            <th>Mar</th>
+            <th>Mer</th>
+            <th>Jeu</th>
+            <th>Ven</th>
+            <th>Sam</th>
+            <th>Dim</th>
+        </tr>
+    </thead>
+
+    <tbody>
+    {% for week in cal %}
+        <tr>
+        {% for day in week %}
+            {% if day == 0 %}
+                <td class="empty"></td>
+            {% else %}
+                <td class="day-cell">
+                    <div class="day-number">
+                        <a href="{{ url_for('add', preselected_day=year ~ '-' ~ '%02d'|format(month) ~ '-' ~ '%02d'|format(day)) }}">
+                            {{ day }}
+                        </a>
+                    </div>
+
+                    {% if day in bookings %}
+                        <ul class="booking-list">
+                        {% for b in bookings[day] %}
+                            <li>{{ b }}</li>
+                        {% endfor %}
+                        </ul>
+                    {% endif %}
+                </td>
+            {% endif %}
+        {% endfor %}
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}

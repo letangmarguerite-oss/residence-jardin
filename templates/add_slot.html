@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Nouveau créneau</h2>
+
+<form method="POST">
+
+    <label for="resident">Nom</label>
+    <input type="text" id="resident" name="resident" required>
+
+    <label for="day">Date</label>
+    <input type="text" id="day" name="day" value="{{ preselected_day }}" required>
+
+    <label for="time_slot">Heure</label>
+    <select id="time_slot" name="time_slot" required>
+        <option value="">Choisir une heure</option>
+        {% for t in time_slots %}
+            <option>{{ t }}</option>
+        {% endfor %}
+    </select>
+
+    <button type="submit">Ajouter</button>
+</form>
+
+<!-- 👉 Le script Flatpickr est ici -->
+<script>
+    flatpickr("#day", {
+        dateFormat: "Y-m-d",
+        altInput: true,
+        altFormat: "d/m/Y",
+        locale: "fr",
+        allowInput: true
+    });
+</script>
+
+{% endblock %}

@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Planning</h2>
+
+<table>
+    <thead>
+        <tr>
+            <th>Nom</th>
+            <th>Date</th>
+            <th>Heure</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        {% for slot in slots %}
+        <tr>
+            <td>{{ slot[1] }}</td>
+            <td>{{ slot[2] | fr_date }}</td>
+            <td>{{ slot[3] }}</td>
+            <td>
+                <form method="POST" action="{{ url_for('delete', slot_id=slot[0]) }}">
+                    <button type="submit">Retirer</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
