@@ -1,8 +1,8 @@
-import sqlite3
 from flask import Flask, render_template, request, redirect, url_for, flash
 from database import get_connection, init_db
 import calendar
 from datetime import date, datetime
+
 
 app = Flask(__name__)
 app.secret_key = "change_this_secret_key"
@@ -82,29 +82,33 @@ def calendar_view():
 # ---------------------------
 def get_all_slots():
     conn = get_connection()
-    c = conn.cursor()
-    c.execute("SELECT id, resident, date, hour FROM slots ORDER BY date")
-    rows = c.fetchall()
+    cur = conn.cursor()
+    cur.execute("SELECT id, resident, date, hour FROM slots ORDER BY date, hour")
+    rows = cur.fetchall()
+    cur.close()
     conn.close()
     return rows
 
 
+
 def add_slot(resident, day, time_slot):
     conn = get_connection()
-    c = conn.cursor()
-    c.execute(
-        "INSERT INTO slots (resident, date, hour) VALUES (?, ?, ?)",
+    cur = conn.cursor()
+    cur.execute(
+        "INSERT INTO slots (resident, date, hour) VALUES (%s, %s, %s)",
         (resident, day, time_slot)
     )
     conn.commit()
+    cur.close()
     conn.close()
 
 
 def delete_slot(slot_id):
     conn = get_connection()
-    c = conn.cursor()
-    c.execute("DELETE FROM slots WHERE id = ?", (slot_id,))
+    cur = conn.cursor()
+    cur.execute("DELETE FROM slots WHERE id = %s", (slot_id,))
     conn.commit()
+    cur.close()
     conn.close()
 
 
