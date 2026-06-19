@@ -1,6 +1,5 @@
 import sqlite3
 from flask import Flask, render_template, request, redirect, url_for, flash
-from scipy.constants import hour
 from database import get_connection, init_db
 import calendar
 from datetime import date, datetime
