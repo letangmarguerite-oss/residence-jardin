@@ -112,6 +112,7 @@ def delete_slot(slot_id):
     conn.close()
 
 
+
 # ---------------------------
 # TIME SLOT GENERATOR (ADD THIS HERE)
 # ---------------------------
