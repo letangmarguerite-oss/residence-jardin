@@ -8,7 +8,6 @@ app = Flask(__name__)
 app.secret_key = "change_this_secret_key"
 
 # Initialize database at startup
-init_db()
 @app.template_filter('fr_date')
 def fr_date(value):
     try:
