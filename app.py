@@ -158,15 +158,18 @@ def add():
 
 @app.route('/delete/<int:id>', methods=['POST'])
 def delete(id):
-    conn = sqlite3.connect("garden.db")
-    cursor = conn.cursor()
+    conn = get_connection()
+    cur = conn.cursor()
 
-    cursor.execute("DELETE FROM slots WHERE id = ?", (id,))
+    cur.execute("DELETE FROM slots WHERE id = %s", (id,))
+
     conn.commit()
-
+    cur.close()
     conn.close()
+
     flash("Créneau supprimé")
     return redirect(url_for('index'))
+
 
 
 # ---------------------------
