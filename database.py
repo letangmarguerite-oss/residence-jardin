@@ -7,18 +7,20 @@ def get_connection():
     db_url = os.getenv("DATABASE_URL")
 
     # Render → PostgreSQL
-    if db_url:
+    if db_url is not None and db_url != "":
         return psycopg2.connect(db_url, cursor_factory=RealDictCursor)
 
     # Local → SQLite
     return sqlite3.connect("local.db")
 
 def init_db():
+    db_url = os.getenv("DATABASE_URL")
+    is_render = db_url is not None and db_url != ""
+
     conn = get_connection()
     cur = conn.cursor()
 
-    # SQLite et PostgreSQL ont des syntaxes différentes pour l'AUTOINCREMENT
-    if os.getenv("DATABASE_URL"):
+    if is_render:
         # PostgreSQL
         cur.execute("""
             CREATE TABLE IF NOT EXISTS slots (
