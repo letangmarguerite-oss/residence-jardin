@@ -1,4 +1,6 @@
+import sqlite3
 from flask import Flask, render_template, request, redirect, url_for, flash
+from scipy.constants import hour
 from database import get_connection, init_db
 import calendar
 from datetime import date, datetime
@@ -8,7 +10,6 @@ app.secret_key = "change_this_secret_key"
 
 # Initialize database at startup
 init_db()
-
 @app.template_filter('fr_date')
 def fr_date(value):
     try:
@@ -17,27 +18,13 @@ def fr_date(value):
     except:
         return value
 
-
 # ---------------------------
 # CALENDAR VIEW WITH NAVIGATION
 # ---------------------------
 @app.route("/calendar")
 def calendar_view():
-    # Dictionnaire des mois en français
-    MOIS_FR = {
-        1: "Janvier",
-        2: "Février",
-        3: "Mars",
-        4: "Avril",
-        5: "Mai",
-        6: "Juin",
-        7: "Juillet",
-        8: "Août",
-        9: "Septembre",
-        10: "Octobre",
-        11: "Novembre",
-        12: "Décembre"
-    }
+    MOIS_FR = {1: "Janvier",2: "Février",3: "Mars",4: "Avril",5: "Mai",6: "Juin",7: "Juillet",
+        8: "Août",9: "Septembre",10: "Octobre",11: "Novembre",12: "Décembre"}
 
     # Read month/year from URL, or default to current month
     today = date.today()
@@ -50,18 +37,18 @@ def calendar_view():
     # Load all slots
     conn = get_connection()
     c = conn.cursor()
-    c.execute("SELECT resident, day, time_slot FROM planning")
+    c.execute("SELECT resident, date, hour FROM slots")
     slots = c.fetchall()
     conn.close()
 
     # Organize bookings by day number
     bookings = {}
-    for resident, day, time_slot in slots:
-        y, m, d = map(int, day.split("-"))
+    for resident, date_value, hour in slots:
+        y, m, d = map(int, date_value.split("-"))
         if y == year and m == month:
             if d not in bookings:
                 bookings[d] = []
-            bookings[d].append(f"{time_slot} — {resident}")
+            bookings[d].append(f"{hour} — {resident}")
 
     # Compute previous and next month
     prev_month = month - 1
@@ -88,8 +75,7 @@ def calendar_view():
         prev_month=prev_month,
         prev_year=prev_year,
         next_month=next_month,
-        next_year=next_year
-    )
+        next_year=next_year)
 
 
 # ---------------------------
@@ -98,7 +84,7 @@ def calendar_view():
 def get_all_slots():
     conn = get_connection()
     c = conn.cursor()
-    c.execute("SELECT id, resident, day, time_slot FROM planning ORDER BY day, time_slot")
+    c.execute("SELECT id, resident, date, hour FROM slots ORDER BY date")
     rows = c.fetchall()
     conn.close()
     return rows
@@ -108,8 +94,8 @@ def add_slot(resident, day, time_slot):
     conn = get_connection()
     c = conn.cursor()
     c.execute(
-        "INSERT INTO planning (resident, day, time_slot) VALUES (?, ?, ?)",
-        (resident, day, time_slot),
+        "INSERT INTO slots (resident, date, hour) VALUES (?, ?, ?)",
+        (resident, day, time_slot)
     )
     conn.commit()
     conn.close()
@@ -118,11 +104,9 @@ def add_slot(resident, day, time_slot):
 def delete_slot(slot_id):
     conn = get_connection()
     c = conn.cursor()
-    c.execute("DELETE FROM planning WHERE id = ?", (slot_id,))
+    c.execute("DELETE FROM slots WHERE id = ?", (slot_id,))
     conn.commit()
     conn.close()
-
-
 
 
 # ---------------------------
@@ -145,6 +129,7 @@ def index():
 
 
 @app.route("/add", methods=["GET", "POST"])
+
 def add():
     preselected_day = request.args.get("preselected_day")
 
@@ -167,11 +152,18 @@ def add():
         time_slots=generate_time_slots()
     )
 
-@app.route("/delete/<int:slot_id>", methods=["POST"])
-def delete(slot_id):
-    delete_slot(slot_id)
-    flash("Time slot deleted.")
-    return redirect(url_for("index"))
+@app.route('/delete/<int:id>', methods=['POST'])
+def delete(id):
+    conn = sqlite3.connect("garden.db")
+    cursor = conn.cursor()
+
+    cursor.execute("DELETE FROM slots WHERE id = ?", (id,))
+    conn.commit()
+
+    conn.close()
+    flash("Créneau supprimé")
+    return redirect(url_for('index'))
+
 
 # ---------------------------
 # RUN APP

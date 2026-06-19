@@ -20,8 +20,9 @@
             <td>{{ slot[2] | fr_date }}</td>
             <td>{{ slot[3] }}</td>
             <td>
-                <form method="POST" action="{{ url_for('delete', slot_id=slot[0]) }}">
-                    <button type="submit">Retirer</button>
+                <form action="{{ url_for('delete', id=slot[0]) }}" method="POST"
+      onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer ce créneau ?');">
+                     <button type="submit">Supprimer</button>
                 </form>
             </td>
         </tr>
