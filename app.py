@@ -42,8 +42,13 @@ def calendar_view():
 
     # Organize bookings by day number
     bookings = {}
-    for resident, date_value, hour in slots:
+    for slot in slots:
+        resident = slot["resident"]
+        date_value = slot["date"]
+        hour = slot["hour"]
+
         y, m, d = map(int, date_value.split("-"))
+
         if y == year and m == month:
             if d not in bookings:
                 bookings[d] = []
