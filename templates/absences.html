@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h2>Déclarer une absence / vacances</h2>
+
+<form method="POST">
+    <label for="resident">Nom</label>
+    <input type="text" id="resident" name="resident" required>
+
+    <label for="date_depart">Date de départ</label>
+    <input type="date" id="date_depart" name="date_depart" required>
+
+    <label for="date_retour">Date de retour</label>
+    <input type="date" id="date_retour" name="date_retour" required>
+
+    <button type="submit">Enregistrer</button>
+</form>
+
+<h3>Absences déclarées</h3>
+<ul>
+    {% for a in absences %}
+        <li>
+            <strong>{{ a.resident }}</strong> :
+            du {{ a.date_depart }} au {{ a.date_retour }}
+        </li>
+    {% endfor %}
+</ul>
+{% endblock %}

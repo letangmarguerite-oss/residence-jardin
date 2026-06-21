@@ -175,6 +175,23 @@ def delete(id):
     flash("Créneau supprimé")
     return redirect(url_for('index'))
 
+@app.route("/absences", methods=["GET", "POST"])
+def absences():
+    if request.method == "POST":
+        resident = request.form.get("resident", "").strip()
+        date_depart = request.form.get("date_depart", "").strip()
+        date_retour = request.form.get("date_retour", "").strip()
+
+        if not resident or not date_depart or not date_retour:
+            flash("Veuillez remplir tous les champs.")
+            return redirect(url_for("absences"))
+
+        add_absence(resident, date_depart, date_retour)
+        flash("Absence enregistrée avec succès.")
+        return redirect(url_for("absences"))
+
+    absences_list = get_absences()
+    return render_template("absences.html", absences=absences_list)
 
 
 # ---------------------------
