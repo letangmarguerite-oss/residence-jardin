@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, flash
 from database import get_connection, add_absence, get_absences
 import calendar
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
 
 
