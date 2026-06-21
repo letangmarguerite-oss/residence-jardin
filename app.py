@@ -3,7 +3,6 @@ from database import get_connection, init_db
 import calendar
 from datetime import date, datetime
 
-init_db()
 
 app = Flask(__name__)
 app.secret_key = "change_this_secret_key"
