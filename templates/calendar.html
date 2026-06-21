@@ -8,10 +8,8 @@
 
     <span class="month-title">{{ month_name }} {{ year }}</span>
 
-
     <a class="nav-btn" href="{{ url_for('calendar_view', month=next_month, year=next_year) }}">Mois suivant →</a>
 </div>
-
 
 <!-- Calendar grid -->
 <table class="calendar">
@@ -35,12 +33,15 @@
                 <td class="empty"></td>
             {% else %}
                 <td class="day-cell">
+
+                    <!-- Numéro du jour cliquable -->
                     <div class="day-number">
                         <a href="{{ url_for('add', preselected_day=year ~ '-' ~ '%02d'|format(month) ~ '-' ~ '%02d'|format(day)) }}">
                             {{ day }}
                         </a>
                     </div>
 
+                    <!-- Réservations -->
                     {% if day in bookings %}
                         <ul class="booking-list">
                         {% for b in bookings[day] %}
@@ -48,6 +49,16 @@
                         {% endfor %}
                         </ul>
                     {% endif %}
+
+                    <!-- Absences -->
+                    {% if day in absences_by_day %}
+                        <div class="absence">
+                            {% for person in absences_by_day[day] %}
+                                Absent : {{ person }}<br>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+
                 </td>
             {% endif %}
         {% endfor %}

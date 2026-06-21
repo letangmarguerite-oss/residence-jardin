@@ -23,25 +23,29 @@ def fr_date(value):
 # ---------------------------
 @app.route("/calendar")
 def calendar_view():
-    MOIS_FR = {1: "Janvier",2: "Février",3: "Mars",4: "Avril",5: "Mai",6: "Juin",7: "Juillet",
-        8: "Août",9: "Septembre",10: "Octobre",11: "Novembre",12: "Décembre"}
+    MOIS_FR = {
+        1: "Janvier", 2: "Février", 3: "Mars", 4: "Avril", 5: "Mai", 6: "Juin",
+        7: "Juillet", 8: "Août", 9: "Septembre", 10: "Octobre", 11: "Novembre", 12: "Décembre"
+    }
 
-    # Read month/year from URL, or default to current month
     today = date.today()
     year = int(request.args.get("year", today.year))
     month = int(request.args.get("month", today.month))
 
-    # Generate calendar matrix
+    # 🔹 Récupérer les absences
+    absences = get_absences()
+
+    # 🔹 Générer le calendrier
     cal = calendar.monthcalendar(year, month)
 
-    # Load all slots
+    # 🔹 Charger les créneaux
     conn = get_connection()
     c = conn.cursor()
     c.execute("SELECT resident, date, hour FROM slots")
     slots = c.fetchall()
     conn.close()
 
-    # Organize bookings by day number
+    # 🔹 Organiser les réservations par jour
     bookings = {}
     for slot in slots:
         resident = slot["resident"]
@@ -49,13 +53,27 @@ def calendar_view():
         hour = slot["hour"]
 
         y, m, d = map(int, date_value.split("-"))
-
         if y == year and m == month:
             if d not in bookings:
                 bookings[d] = []
             bookings[d].append(f"{hour} — {resident}")
 
-    # Compute previous and next month
+    # 🔹 Organiser les absences par jour
+    absences_by_day = {}
+    for a in absences:
+        start = datetime.strptime(a["date_depart"], "%Y-%m-%d").date()
+        end = datetime.strptime(a["date_retour"], "%Y-%m-%d").date()
+
+        current = start
+        while current <= end:
+            if current.year == year and current.month == month:
+                day = current.day
+                if day not in absences_by_day:
+                    absences_by_day[day] = []
+                absences_by_day[day].append(a["resident"])
+            current = current + timedelta(days=1)
+
+    # 🔹 Navigation mois précédent / suivant
     prev_month = month - 1
     prev_year = year
     next_month = month + 1
@@ -69,7 +87,6 @@ def calendar_view():
         next_month = 1
         next_year += 1
 
-    # 👉 Le return doit être ici, PAS dans un if
     return render_template(
         "calendar.html",
         cal=cal,
@@ -77,10 +94,12 @@ def calendar_view():
         year=year,
         month_name=MOIS_FR[month],
         bookings=bookings,
+        absences_by_day=absences_by_day,   # 🔹 AJOUT IMPORTANT
         prev_month=prev_month,
         prev_year=prev_year,
         next_month=next_month,
-        next_year=next_year)
+        next_year=next_year
+    )
 
 
 # ---------------------------
